@@ -1,0 +1,7 @@
+streamlit
+requests
+Pillow
+pandas
+fastapi[standard]
+pinecone
+transformers 
