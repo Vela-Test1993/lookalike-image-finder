@@ -5,10 +5,9 @@ sys.path.append(src_directory)
 from pinecone import Pinecone, ServerlessSpec
 import time
 from model.clip_model import ClipModel
-from data import request_images
-from data import data_set
 from config import config
 from utils import logger
+import pandas as pd
 
 config = config.load_config()
 logger = logger.get_logger()
@@ -57,38 +56,44 @@ def get_index():
         logger.info(f"Error occurred while getting or creating the Pinecone index: {str(e)}", exc_info=True)
         return index
     
-def upsert_data(index,embeddings,id,url):
-    try :
-        logger.info("Started to upsert the data")
+def process_and_upsert_data(index, data: pd.Series, url_key: str, id_key: str):
+    """
+    Processes a single row of data (pandas Series) by extracting the URL and ID, generating image embeddings using 
+    a clip model, and then upserting the generated embeddings into a pinecone database index.
+
+    This function handles:
+    - Extracting the URL and ID from the provided `data` (a pandas Series) using the specified keys (`url_key` and `id_key`).
+    - Using the `clip_model` to generate embeddings for the image found at the extracted URL.
+    - Upserting the generated embeddings, along with the photo ID and URL, into the pinecone database index using the `upsert` method.
+
+    Args:
+        data (pandas.Series): A single row of data from the DataFrame, containing the URL and ID.
+        url_key (str): The column name in the Series that contains the URL of the image.
+        id_key (str): The column name in the Series that contains the photo ID.
+
+    """
+    # Validate if the required columns exist in the row (Series)
+    if url_key not in data or id_key not in data:
+        raise ValueError(f"Missing required keys: '{url_key}' or '{id_key}' in the data")
+
+    try:
+        logger.info("Started to process and upsert the data")
+        url = data[url_key]
+        photo_id = data[id_key]
+        embeddings = clip_model.get_image_embedding(url)
         index.upsert(
             vectors=[{
-                "id": id,
+                "id": photo_id,
                 "values": embeddings,
                 "metadata": {
-                "url": url,
-                "photo_id": id
+                    "url": url,
+                    "photo_id": photo_id
                 }
             }],
             namespace="image-search-dataset",
         )
-        logger.info(f"Successfully upserted the data in database")
+        logger.info(f"Successfully upserted data for photo_id {photo_id} with URL {url}")
+    except ValueError as ve:
+        logger.error(f"ValueError: {ve}")
     except Exception as e:
-        logger.info(f"Unable to upsert the data {e}")
-        raise
-    
-def add_data_to_database(df):
-    try:
-        index = get_index()
-        logger.info("Starting to add the embeddings to the database")
-        for _, data in df.iterrows():
-            url = data['photo_image_url']
-            id = data['photo_id']
-            embeddings = clip_model.get_image_embedding(url)
-            upsert_data(index,embeddings,id,url)
-        logger.info("Added embeddings to the database successfully")
-    except Exception as e:
-        logger.info("Unable to add the data. Error : {e}")
-
-
-# df = data_set.get_df(8000,8500)     
-# add_data_to_database(df)
+        logger.error(f"Error processing row with photo_id {data.get(id_key, 'unknown')}: {e}")
