@@ -1,0 +1,1 @@
+from .home_page_api import router as homepage_router
