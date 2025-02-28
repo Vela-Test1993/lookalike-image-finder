@@ -5,6 +5,7 @@ src_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), "../..",
 sys.path.append(src_directory)
 from data import request_images
 from utils import logger
+import torch
 
 logger = logger.get_logger()
 
