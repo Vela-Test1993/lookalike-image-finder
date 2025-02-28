@@ -38,9 +38,10 @@ def wait_till_index_loaded(pinecone, index_name):
             time.sleep(1)
 
 def get_index():
+    global index
+    index = None
     try:
         pc = Pinecone(api_key=pincone_api_key)
-        index = None
         index_name = "imagesearch"
         logger.info(f"Checking if the index '{index_name}' exists...")
         if not pc.has_index(index_name):
@@ -51,10 +52,9 @@ def get_index():
         else:
             index = pc.Index(index_name)
             logger.info(f"Index '{index_name}' already exists. Returning the existing index.")
-        return index
     except Exception as e:
         logger.info(f"Error occurred while getting or creating the Pinecone index: {str(e)}", exc_info=True)
-        return index
+    return index
     
 def process_and_upsert_data(index, data: pd.Series, url_key: str, id_key: str):
     """
