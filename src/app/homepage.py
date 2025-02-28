@@ -39,7 +39,7 @@ def search_tab():
 
     with st.container():
 
-        col1, col2 = st.columns([7, 4], gap="small")
+        col1, col2 = st.columns([7, 5], gap="small")
         with col1:
             search_query = st.text_input(
                 label="🔍 Search for Images",

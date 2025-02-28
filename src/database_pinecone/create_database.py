@@ -5,11 +5,12 @@ sys.path.append(src_directory)
 from pinecone import Pinecone, ServerlessSpec
 import time
 from model.clip_model import ClipModel
-from config import config
+from dotenv import load_dotenv
 from utils import logger
 import pandas as pd
 
-config = config.load_config()
+load_dotenv()
+pincone_api_key = os.environ.get("PINECONE_API_KEY")
 logger = logger.get_logger()
 
 clip_model = ClipModel()
@@ -38,7 +39,6 @@ def wait_till_index_loaded(pinecone, index_name):
 
 def get_index():
     try:
-        pincone_api_key = config['pinecone_db']['pincone_api_key']
         pc = Pinecone(api_key=pincone_api_key)
         index = None
         index_name = "imagesearch"
