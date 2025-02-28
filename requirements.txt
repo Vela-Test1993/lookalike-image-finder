@@ -6,3 +6,5 @@ fastapi[standard]
 pinecone
 transformers 
 torch
+torchvision
+torchaudio
