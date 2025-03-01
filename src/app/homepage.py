@@ -4,7 +4,7 @@ src_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), "../..",
 sys.path.append(src_directory)
 import streamlit as st
 from utils import logger
-from database_pinecone import querry_database,create_database
+from database_pinecone import create_database, query_database
 from model.clip_model import ClipModel
 from data import data_set
 
@@ -25,7 +25,7 @@ def setup_page():
         <i>{PAGE_TITLE} 🔍📸</i>
         </h1>
         """, unsafe_allow_html=True)
-    st.toast("✨ Welcome to Look-a-Like: The Ultimate Image Finder! Start searching now. 🔍")
+    # st.toast("✨ Welcome to Look-a-Like: The Ultimate Image Finder! Start searching now. 🔍")
     logger.info(f"Page successfully configured with title: {PAGE_TITLE}")
 
 def search_tab():
@@ -99,6 +99,7 @@ def display_images(response):
         for i, result in enumerate(response.matches):
             with cols[i % 2]:
                 st.image(result.metadata["url"], width=500)
+                st.write(f"Image score : {result.score}")
         logger.info("Displayed the images successfully")
 
 def write_message(message):
@@ -106,14 +107,14 @@ def write_message(message):
 
 def get_images_by_text(query):
     embedding = clip_model.get_text_embedding(query)
-    response = querry_database.fetch_data(embedding)
+    response = query_database.fetch_data(embedding)
     message = f"🔍 Showing search results for {query}"
     write_message(message)
     images = display_images(response)
 
 def get_images_by_image(query):
     embedding = clip_model.get_uploaded_image_embedding(query)
-    response = querry_database.fetch_data(embedding)
+    response = query_database.fetch_data(embedding)
     message = f"🔍 Showing search results of relevant images"
     write_message(message)
     images = display_images(response)
@@ -160,6 +161,23 @@ def load_data():
         st.error(f"Error loading data: {e}")
         logger.error(f"Error loading data: {e}")
         st.session_state.load_clicked = False
+
+def get_or_greet_user_name():
+    if 'user_name' not in st.session_state:
+        st.session_state.user_name = None
+        logger.info("User_name not found in session_state, setting to None.")
+
+    if st.session_state.user_name is None:
+        logger.info("User_name is None, requesting user input.")
+        user_name = st.text_input("Please let me know your name:",
+                              placeholder="Enter your name buddy")
+        if user_name:
+            st.session_state.user_name = user_name
+            logger.info(f"User entered name: {user_name}. Setting session_state.user_name.")
+            st.rerun()
+    else:
+        logger.info(f"User already entered a name: {st.session_state.user_name}. Displaying greeting.")
+        return st.toast(f"Hello {st.session_state.user_name}! Happy Searching")
 
 
 def about_us():

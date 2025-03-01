@@ -1,5 +1,5 @@
 from pydantic import BaseModel
 
 class ImageSearch(BaseModel):
-    querry_text : str
+    query_text: str = "Dogs" 
 
